@@ -65,6 +65,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ramdisk", type=Path, required=True)
     parser.add_argument("--log", type=Path, required=True)
+    parser.add_argument("--boot-arg", action="append", default=[],
+                        help="Append a diagnostic kernel argument to the QEMU boot")
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="cph2205-usb-") as temp:
         tmp = Path(temp)
@@ -88,7 +90,8 @@ def main():
         command = ["qemu-system-aarch64", "-machine", "virt,gic-version=3", "-cpu", "cortex-a57",
                    "-smp", "2", "-m", "1024", "-nodefaults", "-display", "none", "-monitor", "none",
                    "-serial", "stdio", "-no-reboot", "-kernel", IMAGE, "-initrd", ramdisk,
-                   "-append", "console=ttyAMA0,115200 rdinit=/qemu-usb-init"]
+                   "-append", " ".join(["console=ttyAMA0,115200", "rdinit=/qemu-usb-init",
+                                        *args.boot_arg])]
         proof = b"QEMU verified both USB shell responses"
         captured = bytearray()
         with subprocess.Popen(command, stdout=subprocess.PIPE, stdin=subprocess.DEVNULL,

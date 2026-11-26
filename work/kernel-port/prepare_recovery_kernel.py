@@ -56,7 +56,11 @@ def main():
     if kernel_address + max(kernel_size, len(raw_kernel)) >= ramdisk_address:
         raise ValueError("Expanded kernel overlaps the archived ramdisk load address")
     kernel = output / "Image.gz"
-    kernel.write_bytes(gzip.compress(raw_kernel, compresslevel=6, mtime=0))
+    # A fixed gzip OS header keeps the recovery identical across Windows and Linux.
+    with kernel.open("wb") as stream:
+        with gzip.GzipFile(filename="", mode="wb", compresslevel=6,
+                           fileobj=stream, mtime=0) as compressed:
+            compressed.write(raw_kernel)
     ramdisk = options.ramdisk.resolve()
     replace_arg(args, "--kernel", kernel)
     replace_arg(args, "--ramdisk", ramdisk)

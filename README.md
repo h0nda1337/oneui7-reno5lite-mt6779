@@ -1,15 +1,16 @@
 # One UI 7 del Galaxy A05 en el OPPO Reno5 Lite
 
-Port experimental del Galaxy A05 SM-A055M al OPPO Reno5 Lite CPH2205 (MT6779). El kernel de pruebas ya ejecuta `/init` en el Reno y Windows reconoce su puerto serie USB. Quedan por verificar una sesión interactiva reproducible, el acceso a las particiones UFS y el arranque de One UI hasta el escritorio.
+Port experimental del Galaxy A05 SM-A055M al OPPO Reno5 Lite CPH2205 (MT6779). El kernel de pruebas ejecutó el `/init` de diagnóstico en el Reno, respondió a un comando desde Windows y detectó el almacenamiento interno UFS. El arranque de Android en el teléfono con este kernel y la llegada al escritorio de One UI siguen pendientes.
 
 ## Qué se ha comprobado
 
 | Entorno | Resultado observado |
 | --- | --- |
 | Samsung A055MUBUGDZB2 | Se extrajeron la configuración y la versión del kernel de fábrica. La compilación experimental usa Android Common Kernel 6.6.89, la configuración extraída y parches para el MT6779. Sigue pendiente obtener y cotejar el código exacto de la compilación OEM. |
-| Reno CPH2205, ColorOS F.72 | Linux presenta mensajes en la pantalla física. En una prueba se registró el host SCSI de UFS. Falta identificar discos y verificar las particiones `super` y `userdata`. |
-| USB en el Reno | Windows detectó el puerto serie en las pruebas 6 y 7. En la sexta capturó el eco del comando. En la séptima recibió cero bytes y el Reno se reinició con la carga de UFS aún pendiente. Fastboot confirmó la escritura del recovery original y ColorOS F.72 completó el arranque. |
-| USB en QEMU | La consola respondió antes y después de cargar el módulo UFS. Con la carga a petición, el módulo siguió ausente transcurridos 21 segundos y se cargó al recibir la orden de la consola. |
+| Reno CPH2205, ColorOS F.72 | En dos arranques independientes de la misma imagen, `ufshcd-mtk` reconoció tres unidades UFS y la consola identificó `super` en `sdc46` y `userdata` en `sdc49`. En la prueba 9 también se leyeron 12 KiB de metadatos de `super`, con la firma de cabecera LP esperada. |
+| USB en el Reno | La prueba 7 terminó con cero bytes recibidos en Windows. Las pruebas 8 y 9 usaron los mismos componentes de arranque y añadieron solo `cpuidle.off=1` a la línea de comandos de la prueba 7. En cada arranque la consola devolvió el reto de esa sesión y la versión exacta del kernel. El monitor pidió entonces que se cargara el módulo UFS. |
+| QEMU | En la prueba de referencia, la consola USB respondió antes y después de solicitar UFS. Al añadir `cpuidle.off=1`, el USB simulado respondió al primer reto y su controlador virtual falló después. Por UART se verificaron el latido a los 15 s y la carga de UFS a petición. |
+| Binarios del A05 en QEMU Cortex-A55 | El enlazador de Samsung resolvió las 23 dependencias directas de `/system/bin/init`. El `toybox` de esa misma imagen ejecutó `uname -r` y devolvió la versión del kernel experimental. |
 | One UI por DSU | Se empaquetaron `system`, `product` y `system_ext`. Con el kernel original del Reno se registró `bpfloader-failed`. La prueba de mapas BPF en QEMU cubre una parte del arranque de Android. |
 
 El alcance actual de las pruebas físicas es el recovery temporal. El objetivo posterior es evaluar qué componentes MediaTek del A05 pueden adaptarse. La etapa del preloader requiere antes un arranque reproducible y una vía de recuperación comprobada. [Registro de pruebas y restauraciones](work/kernel-port/physical-trials.json)
@@ -55,14 +56,58 @@ Para empaquetar en la PC, define `RENO_RECOVERY` como la ruta al respaldo origin
 python3 prepare_recovery_kernel.py --kernel "$build/arch/arm64/boot/Image" \
     --dtb reno-dt/reno-6.6-usb-ref-base.dtb --ramdisk ramdisk-recovery-ufs-on-request.cpio.gz \
     --boot-arg cph2205.lkfb=1 --boot-arg console=tty0 --boot-arg clk_ignore_unused \
-    --boot-arg pd_ignore_unused --output local-recovery
+    --boot-arg pd_ignore_unused --boot-arg cpuidle.off=1 --output local-recovery
 python3 ../tools/avbtool.py verify_image --image local-recovery/recovery.img
 ```
 
 Los manifiestos de `work/kernel-port/recovery-*/` registran la composición de cada imagen. El monitor físico usa PySerial. El ejecutor de las pruebas usa ADB y Fastboot con el número de serie que se indique en `RENO_ADB_SERIAL`.
 
+Con la imagen `system` del A05 montada como se indica en la sección de DSU, este comando comprueba el enlazador y ejecuta `toybox` en QEMU desde `work/kernel-port`. También requiere GNU `readelf`.
+
+```bash
+python3 check_android_userspace_qemu.py --system-root /tmp/codex-oneui-2205/a05/system \
+    --kernel "$build/arch/arm64/boot/Image" --ramdisk ramdisk-recovery-ufs-on-request.cpio.gz \
+    --log qemu-android-userspace.log
+```
+
 ## Reconstruir el experimento DSU
 
-Desde `work/`, `inspect_super.py` extrae las particiones lógicas del donante a `a05/`. `mount_inputs.sh` monta las imágenes de ambos modelos en modo de lectura mediante EROFS. A continuación, `filter_ext_mapping.py` genera el ajuste de la política SELinux y `check_split_policy.sh` compara las combinaciones con el compilador `secilc`. `rebuild_system_ext.sh` reconstruye la partición con EROFS y `sign_system_ext.sh` genera la firma de desarrollo. Por último, `package_dsu.py` crea el ZIP y compara cada entrada con su imagen de origen. Una clave generada de nuevo cambia los hashes del paquete. [Sumas del experimento archivado](work/dsu/package-verification.txt)
+En Linux, usa Bash, Python 3.11 o posterior, GNU tar, `lz4`, OpenSSL, `secilc`, FUSE y las herramientas EROFS. El experimento usó `erofs-utils` 1.8.6 con `erofsfuse`, `mkfs.erofs` y `fsck.erofs` en el `PATH`. Define `A05_AP` como la ruta absoluta al archivo AP `.tar.md5` de A055MUBUGDZB2 y exporta `RENO_FIRMWARE` con la ruta absoluta a las cinco imágenes EROFS de ColorOS F.72 indicadas en el bloque.
+
+```bash
+# Desde la raíz del clon, en una misma sesión de Bash
+set -euo pipefail
+cd work
+particiones=(system system_ext product vendor odm)
+tar -xOf "$A05_AP" super.img.lz4 | lz4 -dc > a05-super.sparse.img
+python3 inspect_super.py a05-super.sparse.img --output a05 --extract "${particiones[@]}"
+
+# Si aportas el super completo del Reno en lugar de las cinco imágenes, define RENO_SUPER.
+if [[ -n ${RENO_SUPER:-} ]]; then
+    export RENO_FIRMWARE="$PWD/inputs/reno"
+    python3 inspect_super.py "$RENO_SUPER" --output "$RENO_FIRMWARE" --extract "${particiones[@]}"
+fi
+bash mount_inputs.sh
+bash check_split_policy.sh
+test -s policy/a05-filtered-ext-map-with-reno-vendor.bin
+bash rebuild_system_ext.sh
+bash sign_system_ext.sh
+```
+
+La compilación de SELinux con el mapa original del A05 falla en esta combinación. En un clon nuevo, el archivo que comprueba `test -s` procede de la variante con el mapa 31.0 filtrado. Para comprobar que ese mapa es el único archivo modificado, monta la imagen reconstruida en modo de lectura, compárala con la original y empaqueta el ZIP.
+
+```bash
+montajes=/tmp/codex-oneui-2205
+mkdir -p "$montajes/candidate/system_ext"
+erofsfuse -o ro "$PWD/dsu/system_ext.img" "$montajes/candidate/system_ext"
+python3 verify_system_ext.py
+python3 package_dsu.py
+umount "$montajes/candidate/system_ext"
+for modelo in a05 reno; do
+    for p in "${particiones[@]}"; do umount "$montajes/$modelo/$p"; done
+done
+```
+
+El resultado es `outputs/OneUI7-A055M-CPH2205-DSU-exp01.zip` en la raíz del clon. El empaquetador verifica los SHA-256 de `system.img`, `product.img` y `system_ext.img` dentro del ZIP contra las imágenes locales. La clave de desarrollo y la sal AVB se generan localmente, de modo que la imagen firmada y el ZIP pueden tener hashes distintos de los archivados. [Sumas del experimento archivado](work/dsu/package-verification.txt)
 
 Los archivos de Linux, OPPO y AOSP conservan sus avisos de origen. Los textos de licencia correspondientes están en [LICENSES](LICENSES).

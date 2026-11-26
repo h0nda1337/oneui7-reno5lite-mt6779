@@ -25,12 +25,34 @@ COMMAND = (
 PROOF = re.compile(rb"(?m)^CPH2205 PROBE END\r*\n")
 UFS_DISKS = [re.compile(rb"(?m)^UFS partition " + name + rb" on [^\s]+\r*\n")
              for name in (b"super", b"userdata")]
+SUPER_NODE = re.compile(rb"(?m)^UFS partition super on (sd[a-z]+[1-9][0-9]*)\r*\n")
+LP_SAMPLE = re.compile(rb"(?m)^CPH2205 LP ([0-9a-f]{64}) ([0-9a-f]{8})\r*\n")
 
 
-def shell_challenge():
+def super_metadata_command(node):
+    # The temporary node and 12 KiB sample live on the initramfs. Only super is opened.
+    if not re.fullmatch(rb"sd[a-z]+[1-9][0-9]*", node):
+        raise ValueError("Unexpected UFS partition name")
+    return (
+        b"(set -e; p=/sys/class/block/" + node + b"; "
+        b"grep -Fxq PARTNAME=super \"$p/uevent\"; "
+        b"case \"$(readlink -f \"$p\")\" in */11270000.ufshci/host*/*) ;; *) exit 1;; esac; "
+        b"IFS=: read -r maj min <\"$p/dev\"; d=$(mktemp -d /dev/lp.XXXXXX); "
+        b"trap 'rm -f \"$d/b\" \"$d/p\"; rmdir \"$d\"' EXIT; "
+        b"mknod -m 400 \"$d/b\" b \"$maj\" \"$min\"; "
+        b"dd if=\"$d/b\" of=\"$d/p\" bs=4096 skip=1 count=3 2>/dev/null; "
+        b"test \"$(wc -c <\"$d/p\")\" -eq 12288; "
+        b"sum=$(sha256sum \"$d/p\"); "
+        b"magic=$(od -An -tx1 -j8192 -N4 \"$d/p\" | tr -d ' \\n'); "
+        b"printf '\\nCPH2205 LP %s %s\\n' \"${sum%% *}\" \"$magic\")\r"
+    )
+
+
+def shell_challenge(expected_release=None):
     token = secrets.token_hex(3).encode()
     command = b"printf '\\nR%s %s\\n' " + token + b" \"$(uname -r)\" | tee /dev/kmsg\r"
-    response = re.compile(rb"(?m)^R" + token + rb" 6\.6\.89-cph2205-lab[^\s]*\r*\n")
+    release = re.escape(expected_release.encode("ascii")) if expected_release else rb"6\.6\.89-cph2205-lab[^\s]*"
+    response = re.compile(rb"(?m)^R" + token + b" " + release + rb"\r*\n")
     return token, command, response
 
 
@@ -38,9 +60,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
     parser.add_argument("--seconds", type=int, default=50)
+    parser.add_argument("--expected-release", help="Require the exact release embedded in the recovery kernel")
     parser.add_argument("--follow-ufs", action="store_true",
                         help="Keep polling the shell after its first response for the UFS partitions")
+    parser.add_argument("--check-super", action="store_true",
+                        help="Read the LP geometry and first header block of the identified super partition")
     args = parser.parse_args()
+    if args.check_super:
+        args.follow_ufs = True
     deadline = time.monotonic() + args.seconds
     shell_observed = False
     with args.output.open("ab") as logfile:
@@ -58,15 +85,16 @@ def main():
                 with serial.Serial(port.device, 115200, timeout=0.5, write_timeout=1) as stream:
                     captured = bytearray()
                     next_command = 0.0
-                    token, challenge, response = shell_challenge()
+                    token, challenge, response = shell_challenge(args.expected_release)
                     print(f"Waiting for R{token.decode()} and the kernel release on {port.device}", flush=True)
                     verified_connection = False
+                    metadata_command = None
                     while time.monotonic() < deadline:
                         if time.monotonic() >= next_command:
                             if not verified_connection:
                                 stream.write(b"\x03\r")
                                 time.sleep(0.2)
-                            stream.write(COMMAND if verified_connection else challenge)
+                            stream.write((metadata_command or COMMAND) if verified_connection else challenge)
                             next_command = time.monotonic() + (4 if verified_connection else 1)
                         if data := stream.read(4096):
                             captured.extend(data)
@@ -79,13 +107,20 @@ def main():
                                 stream.write(REQUEST_UFS)
                             next_command = time.monotonic() + 1
                         if verified_connection and PROOF.search(captured):
-                            if not args.follow_ufs or all(pattern.search(captured) for pattern in UFS_DISKS):
-                                print(captured.decode("utf-8", "replace"))
-                                return
+                            if args.follow_ufs and not all(p.search(captured) for p in UFS_DISKS):
+                                continue
+                            if args.check_super and not LP_SAMPLE.search(captured):
+                                match = SUPER_NODE.search(captured)
+                                if match and metadata_command is None:
+                                    metadata_command = super_metadata_command(match[1])
+                                    next_command = 0
+                                continue
+                            print(captured.decode("utf-8", "replace"))
+                            return
             except serial.SerialException as error:
                 print(f"Diagnostic serial disconnected: {error}", flush=True)
     if shell_observed:
-        print("The shell responded, but both UFS partitions were not observed")
+        print("The shell responded, but a requested storage check remained incomplete")
         return
     raise SystemExit("No complete response from the diagnostic serial console")
 

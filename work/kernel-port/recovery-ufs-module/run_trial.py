@@ -1,10 +1,12 @@
 """Run a verified recovery diagnostic once and restore CPH2205 factory recovery."""
 import argparse
+import gzip
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
+import struct
 import subprocess
 import sys
 import time
@@ -41,6 +43,20 @@ def note(message):
 def check_image(path, digest):
     if path.stat().st_size != 67108864 or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
         raise RuntimeError(f"Image identity mismatch for {path}")
+
+
+def diagnostic_release(image):
+    with image.open("rb") as stream:
+        header = stream.read(44)
+        if header[:8] != b"ANDROID!" or struct.unpack_from("<I", header, 40)[0] != 2:
+            raise ValueError("Expected Android recovery header v2")
+        size = struct.unpack_from("<I", header, 8)[0]
+        stream.seek(struct.unpack_from("<I", header, 36)[0])
+        kernel = gzip.decompress(stream.read(size))
+    release = re.search(rb"Linux version (6\.6\.89-cph2205-lab[\w.+-]*) ", kernel)
+    if not release:
+        raise ValueError("Diagnostic Linux release not found in the verified recovery")
+    return release[1].decode("ascii")
 
 
 def coloros(log=None):
@@ -89,11 +105,28 @@ def write_recovery(path, stage):
         raise RuntimeError(f"Missing recovery write acknowledgement for {stage}")
 
 
+def capture_previous_boot():
+    # Read only bring-up markers before the return to the bootloader rotates pstore.
+    command = (
+        "for f in /sys/fs/pstore/console-ramoops* /sys/fs/pstore/dmesg-ramoops*; do "
+        "if [ -r \"$f\" ]; then echo \"$f\"; "
+        "grep -aE 'Linux version|CPH2205 (initramfs|UFS|loading|received)|"
+        "11201000\\.usb0|11270000\\.ufshci|Kernel panic|watchdog:' \"$f\" | tail -n 80; fi; done"
+    )
+    try:
+        output = run([*ADB, "shell", command], timeout=4)
+        (RUN / "first-return-pstore.log").write_text(
+            (output or "No readable pstore record") + "\n", encoding="utf-8")
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+        note(f"Previous boot log unavailable ({type(error).__name__})")
+
+
 def restore():
     note("Waiting for the known Reno in ColorOS or bootloader to restore recovery")
     if not wait_for(lambda: bootloader_connected() or coloros("post-diagnostic-adb.txt"), 300):
         raise RuntimeError("Factory recovery still needs restoring. Reno is not reachable")
     if not bootloader_connected():
+        capture_previous_boot()
         run([*ADB, "reboot", "bootloader"])
     preflight("restore")
     check_image(STOCK, STOCK_HASH)
@@ -105,11 +138,12 @@ def restore():
     note("Verified stock ColorOS after restoration")
 
 
-def main():
+def main(check_super=False):
     if not SERIAL:
         raise SystemExit("Set RENO_ADB_SERIAL to the intended CPH2205 serial")
     image = RUN / "recovery.img"
     check_image(image, IMAGE_HASH)
+    release = diagnostic_release(image)
     check_image(STOCK, STOCK_HASH)
     if not coloros("stock-before-test.txt"):
         raise RuntimeError("Reno not on expected ColorOS build")
@@ -124,7 +158,9 @@ def main():
     with (RUN / "usb-monitor-stdout.txt").open("w", encoding="utf-8") as out:
         monitor = subprocess.Popen(
             [sys.executable, "-u", str(RUN.parent/"read_recovery_console.py"),
-             str(RUN/"physical-usb.log"), "--seconds", "195", "--follow-ufs"],
+             str(RUN/"physical-usb.log"), "--seconds", "195", "--follow-ufs",
+             "--expected-release", release,
+             *(["--check-super"] if check_super else [])],
             stdout=out, stderr=subprocess.STDOUT)
         try:
             write_recovery(image, "install")
@@ -145,6 +181,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate-directory", type=Path)
     parser.add_argument("--expected-sha256")
+    parser.add_argument("--check-super", action="store_true",
+                        help="Read and fingerprint the first LP metadata blocks after UFS is detected")
     options = parser.parse_args()
     if options.candidate_directory is not None or options.expected_sha256 is not None:
         if not options.candidate_directory or not re.fullmatch("[0-9a-f]{64}", options.expected_sha256 or ""):
@@ -156,4 +194,4 @@ if __name__ == "__main__":
         IMAGE_HASH = options.expected_sha256
     if (RUN / "test-start.txt").exists():
         raise SystemExit("This physical trial already started")
-    main()
+    main(options.check_super)
