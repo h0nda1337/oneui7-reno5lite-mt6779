@@ -6,12 +6,13 @@ Port experimental del Galaxy A05 SM-A055M al OPPO Reno5 Lite CPH2205 (MT6779). E
 
 | Entorno | Resultado observado |
 | --- | --- |
-| Samsung A055MUBUGDZB2 | Se extrajeron la configuración y la versión del kernel de fábrica. La compilación experimental usa Android Common Kernel 6.6.89, la configuración extraída y parches para el MT6779. Sigue pendiente obtener y cotejar el código exacto de la compilación OEM. |
+| Samsung A055MUBUGDZB2 | Se extrajeron la configuración y la versión del kernel de fábrica. La compilación experimental usa Android Common Kernel 6.6.89, la configuración extraída y parches para el MT6779. Sigue pendiente obtener y cotejar el código exacto de la compilación OEM. [Historial oficial del firmware](https://doc.samsungmobile.com/SM-A055M/028533231231/eng.html) |
 | Reno CPH2205, ColorOS F.72 | En dos arranques independientes de la misma imagen, `ufshcd-mtk` reconoció tres unidades UFS y la consola identificó `super` en `sdc46` y `userdata` en `sdc49`. En la prueba 9 también se leyeron 12 KiB de metadatos de `super`, con la firma de cabecera LP esperada. |
 | USB en el Reno | La prueba 7 terminó con cero bytes recibidos en Windows. Las pruebas 8 y 9 usaron los mismos componentes de arranque y añadieron solo `cpuidle.off=1` a la línea de comandos de la prueba 7. En cada arranque la consola devolvió el reto de esa sesión y la versión exacta del kernel. El monitor pidió entonces que se cargara el módulo UFS. |
 | QEMU | En la prueba de referencia, la consola USB respondió antes y después de solicitar UFS. Al añadir `cpuidle.off=1`, el USB simulado respondió al primer reto y su controlador virtual falló después. Por UART se verificaron el latido a los 15 s y la carga de UFS a petición. |
 | Binarios del A05 en QEMU Cortex-A55 | El enlazador de Samsung resolvió las 23 dependencias directas de `/system/bin/init`. El `toybox` de esa misma imagen ejecutó `uname -r` y devolvió la versión del kernel experimental. |
 | Primera etapa de Android en QEMU | El `/init` original del A05 se ejecutó como PID 1, copió `build.prop` e inició la búsqueda de las particiones de primer montaje. En el control con la tabla de montaje de Samsung y sin discos, llegó al tiempo de espera de `super` y de otras 13 particiones. |
+| Primer montaje con almacenamiento virtual | En QEMU, el `/init` del A05 detectó un disco virtio de solo lectura con `system`, `vbmeta` y `vbmeta_system`. Con una tabla de montaje específica para la máquina virtual, Android encontró ambos `vbmeta` originales. La verificación de arranque (AVB) solicitó también `prism`, ausente en ese disco, y detuvo el montaje de `/system`. |
 | One UI por DSU | Se empaquetaron `system`, `product` y `system_ext`. Con el kernel original del Reno se registró `bpfloader-failed`. La prueba de mapas BPF en QEMU cubre una parte del arranque de Android. |
 
 Los dos arranques con consola y UFS terminaron en un reinicio automático. ColorOS registró `ocp` en ambos casos. La causa sigue abierta. Después de cada prueba Fastboot confirmó la escritura del recovery original y ColorOS F.72 completó el arranque. [Registro de pruebas y restauraciones](work/kernel-port/physical-trials.json)
@@ -77,6 +78,14 @@ Para comprobar el primer proceso de Android, el siguiente control extrae `init_b
 
 ```bash
 python3 check_a05_first_stage_qemu.py --ap "$A05_AP" --kernel "$build/arch/arm64/boot/Image"
+```
+
+Para reproducir el control con tres particiones, define `A05_BOOT_IMAGES` como el directorio que contiene `init_boot.img`, `vbmeta.img` y `vbmeta_system.img` descomprimidos del AP. En el directorio `VIRTIO_MODULES` deben estar los módulos `virtio_pci_legacy_dev.ko`, `virtio_pci_modern_dev.ko`, `virtio_pci.ko` y `virtio_blk.ko` firmados para esta compilación. La herramienta usa `sfdisk`, presenta las imágenes en modo de lectura y guarda la salida en un archivo de registro nuevo.
+
+```bash
+python3 check_a05_virtio_mount_qemu.py --boot-images "$A05_BOOT_IMAGES" \
+    --system ../a05/system.img --virtio-modules "$VIRTIO_MODULES" \
+    --kernel "$build/arch/arm64/boot/Image" --log qemu-android-mount.log
 ```
 
 ## Reconstruir el experimento DSU
