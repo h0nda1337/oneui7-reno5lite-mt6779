@@ -1,0 +1,62 @@
+{
+  "device": "CPH2205",
+  "stock_build": "CPH2205_11_F.72",
+  "trials": [
+    {
+      "trial": 1,
+      "image_sha256": "f5ae0ce98e00d54532f23852da60a5abb073bad333e39da9457fa61ae649d10b",
+      "manifest": "recovery-diagnostics/manifest.json",
+      "observation": "ColorOS conservó un motivo de reinicio con kernel_panic y UBSAN.",
+      "stock_recovery_write_acknowledged": true,
+      "coloros_boot_completed": true
+    },
+    {
+      "trial": 2,
+      "image_sha256": "df06874d2b09ac261b4e94a6f201e87e5971a354fa753f2054eb4402edebc270",
+      "manifest": "recovery-ubsan-location/manifest.json",
+      "observation": "El registro de UBSAN y los símbolos de esa compilación permitieron localizar el fallo en mtk_clk_register_gates.",
+      "stock_recovery_write_acknowledged": true,
+      "coloros_boot_completed": true
+    },
+    {
+      "trial": 3,
+      "image_sha256": "67c6c4a9c261398baaddfda42339d49bd155dd4700356ac4d3e2b80f39cf62fe",
+      "manifest": "recovery-infra-clocks/manifest.json",
+      "observation": "La pantalla mostró fb0 y scsi host0: ufshcd. MTU3 informó un timeout de reloj.",
+      "stock_recovery_write_acknowledged": true,
+      "coloros_boot_completed": true
+    },
+    {
+      "trial": 4,
+      "image_sha256": "4c4469d01e7c8a67adaaf5d9efd5098c0bf845592b0869817992ce9344041b7d",
+      "manifest": "recovery-usb2-ufs-reset/manifest.json",
+      "observation": "El controlador USB alcanzó la configuración de FIFO y DMA después del ajuste de reloj USB2.",
+      "stock_recovery_write_acknowledged": true,
+      "coloros_boot_completed": true
+    },
+    {
+      "trial": 5,
+      "image_sha256": "3e72cc8d0f2107acb2f15834ec4131eebedba24930058ebd208246edb713bdf5",
+      "manifest": "recovery-ufs-module/manifest.json",
+      "observation": "La pantalla mostró la ejecución de /init y la programación de la carga diferida de UFS.",
+      "stock_recovery_write_acknowledged": true,
+      "coloros_boot_completed": true
+    },
+    {
+      "trial": 6,
+      "image_sha256": "f7fa59482b94ce10198750f4b50e47e7e916561d719f58ef8dacadcc834a1272",
+      "manifest": "recovery-usb-peripheral-vbus/manifest.json",
+      "observation": "Windows enumeró la interfaz serie de diagnóstico. La captura recibió el eco del comando sin una respuesta verificable de uname.",
+      "stock_recovery_write_acknowledged": true,
+      "coloros_boot_completed": true
+    },
+    {
+      "trial": 7,
+      "image_sha256": "03789a30a5005783e7a4eb08cfdc205f004eb55cf372680ece3bfce34fbf29fa",
+      "manifest": "recovery-ufs-on-request/manifest.json",
+      "observation": "La pantalla mostró /init esperando la solicitud de UFS. Windows enumeró la consola USB. La captura recibió cero bytes y el monitor dejó pendiente la solicitud de UFS. ColorOS registró HW_reboot al volver del diagnóstico.",
+      "stock_recovery_write_acknowledged": true,
+      "coloros_boot_completed": true
+    }
+  ]
+}

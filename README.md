@@ -8,11 +8,11 @@ Port experimental del Galaxy A05 SM-A055M al OPPO Reno5 Lite CPH2205 (MT6779). E
 | --- | --- |
 | Samsung A055MUBUGDZB2 | Se extrajeron la configuración y la versión del kernel de fábrica. La compilación experimental usa Android Common Kernel 6.6.89, la configuración extraída y parches para el MT6779. Sigue pendiente obtener y cotejar el código exacto de la compilación OEM. |
 | Reno CPH2205, ColorOS F.72 | Linux presenta mensajes en la pantalla física. En una prueba se registró el host SCSI de UFS. Falta identificar discos y verificar las particiones `super` y `userdata`. |
-| USB en el Reno | En la sexta prueba Windows identificó el gadget por su número de serie de diagnóstico y recibió el eco del comando. El reinicio ocurrió antes de capturar una respuesta completa. Fastboot confirmó la restauración del recovery original y ColorOS terminó de arrancar. |
-| USB en QEMU | El host CDC ACM simulado recibió respuestas de la consola antes y después de cargar el módulo UFS. La prueba siguiente permite solicitar esa carga desde la consola. |
+| USB en el Reno | Windows detectó el puerto serie en las pruebas 6 y 7. En la sexta capturó el eco del comando. En la séptima recibió cero bytes y el Reno se reinició con la carga de UFS aún pendiente. Fastboot confirmó la escritura del recovery original y ColorOS F.72 completó el arranque. |
+| USB en QEMU | La consola respondió antes y después de cargar el módulo UFS. Con la carga a petición, el módulo siguió ausente transcurridos 21 segundos y se cargó al recibir la orden de la consola. |
 | One UI por DSU | Se empaquetaron `system`, `product` y `system_ext`. Con el kernel original del Reno se registró `bpfloader-failed`. La prueba de mapas BPF en QEMU cubre una parte del arranque de Android. |
 
-El alcance actual de las pruebas físicas es el recovery temporal. El objetivo posterior es evaluar qué componentes MediaTek del A05 pueden adaptarse. La etapa del preloader requiere antes un arranque reproducible y una vía de recuperación comprobada.
+El alcance actual de las pruebas físicas es el recovery temporal. El objetivo posterior es evaluar qué componentes MediaTek del A05 pueden adaptarse. La etapa del preloader requiere antes un arranque reproducible y una vía de recuperación comprobada. [Registro de pruebas y restauraciones](work/kernel-port/physical-trials.json)
 
 ## Entradas locales
 
@@ -49,7 +49,17 @@ make -C "$kernel" O="$build" ARCH=arm64 LLVM=1 CONFIG_USB_DUMMY_HCD=m -j8 driver
 python3 check_usb_console_qemu.py --ramdisk ramdisk-recovery-ufs-on-request.cpio.gz --log qemu-usb-request.log
 ```
 
-`prepare_recovery_kernel.py` empaqueta localmente el kernel, el árbol de dispositivos y el ramdisk. Lee el respaldo desde `RENO_RECOVERY` y comprueba el tamaño y el hash del original. Los manifiestos de `work/kernel-port/recovery-*/` registran la composición de cada imagen. El monitor físico usa PySerial. El ejecutor de las pruebas usa ADB y Fastboot con el número de serie que se indique en `RENO_ADB_SERIAL`.
+Para empaquetar en la PC, define `RENO_RECOVERY` como la ruta al respaldo original de F.72. El empaquetador comprueba el tamaño y el hash, reconstruye el contenido original y verifica cada componente del diagnóstico.
+
+```bash
+python3 prepare_recovery_kernel.py --kernel "$build/arch/arm64/boot/Image" \
+    --dtb reno-dt/reno-6.6-usb-ref-base.dtb --ramdisk ramdisk-recovery-ufs-on-request.cpio.gz \
+    --boot-arg cph2205.lkfb=1 --boot-arg console=tty0 --boot-arg clk_ignore_unused \
+    --boot-arg pd_ignore_unused --output local-recovery
+python3 ../tools/avbtool.py verify_image --image local-recovery/recovery.img
+```
+
+Los manifiestos de `work/kernel-port/recovery-*/` registran la composición de cada imagen. El monitor físico usa PySerial. El ejecutor de las pruebas usa ADB y Fastboot con el número de serie que se indique en `RENO_ADB_SERIAL`.
 
 ## Reconstruir el experimento DSU
 

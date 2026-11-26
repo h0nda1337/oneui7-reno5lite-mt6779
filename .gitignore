@@ -24,6 +24,7 @@
 !/work/kernel-port/*.config
 !/work/kernel-port/archived-module-abi.json
 !/work/kernel-port/mediatek-firmware-comparison.json
+!/work/kernel-port/physical-trials.json
 !/work/kernel-port/a05/
 !/work/kernel-port/a05/*.config
 !/work/kernel-port/a05/*.json
