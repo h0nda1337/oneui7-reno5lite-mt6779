@@ -60,7 +60,7 @@ for arg in $(/bin/busybox cat /proc/cmdline); do
     esac
 done
 
-if [ "$recovery_probe" -eq 1 ]; then
+if [ "$recovery_probe" -eq 1 ] && [ ! -f /a05-ram-probe ]; then
     (sleep 180; reboot -f) &
 fi
 
@@ -71,7 +71,22 @@ kernel_log() {
 }
 
 ufs_module=/lib/modules/ufs-mediatek.ko
-if [ -r "$ufs_module" ]; then
+if [ -f /a05-ram-probe ]; then
+    ufs_report="UFS remains unloaded for A05 RAM test"
+    kernel_log "$ufs_report"
+    (
+        elapsed=0
+        while [ "$elapsed" -lt 15 ] && [ ! -e /dev/a05-reboot-request ]; do
+            sleep 1
+            elapsed=$((elapsed + 1))
+        done
+        reason=deadline
+        if [ -e /dev/a05-reboot-request ]; then reason=host; fi
+        kernel_log "A05 RAM reboot requested after ${elapsed}s ($reason)"
+        /bin/busybox reboot -f
+    ) &
+    /bin/run-a05-ram-probe &
+elif [ -r "$ufs_module" ]; then
     ufs_report="UFS module scheduled in 20 seconds"
     if [ -f /ufs-on-request ]; then
         ufs_report="UFS waiting for the USB shell request"

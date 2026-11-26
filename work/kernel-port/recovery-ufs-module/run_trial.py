@@ -138,7 +138,7 @@ def restore():
     note("Verified stock ColorOS after restoration")
 
 
-def main(check_super=False):
+def main(check_super=False, a05_ram=False):
     if not SERIAL:
         raise SystemExit("Set RENO_ADB_SERIAL to the intended CPH2205 serial")
     image = RUN / "recovery.img"
@@ -158,7 +158,8 @@ def main(check_super=False):
     with (RUN / "usb-monitor-stdout.txt").open("w", encoding="utf-8") as out:
         monitor = subprocess.Popen(
             [sys.executable, "-u", str(RUN.parent/"read_recovery_console.py"),
-             str(RUN/"physical-usb.log"), "--seconds", "195", "--follow-ufs",
+             str(RUN/"physical-usb.log"), "--seconds", "195",
+             "--a05-ram" if a05_ram else "--follow-ufs",
              "--expected-release", release,
              *(["--check-super"] if check_super else [])],
             stdout=out, stderr=subprocess.STDOUT)
@@ -181,8 +182,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--candidate-directory", type=Path)
     parser.add_argument("--expected-sha256")
-    parser.add_argument("--check-super", action="store_true",
+    probe = parser.add_mutually_exclusive_group()
+    probe.add_argument("--check-super", action="store_true",
                         help="Read and fingerprint the first LP metadata blocks after UFS is detected")
+    probe.add_argument("--a05-ram", action="store_true",
+                       help="Run the Samsung binary check from the RAM-only recovery")
     options = parser.parse_args()
     if options.candidate_directory is not None or options.expected_sha256 is not None:
         if not options.candidate_directory or not re.fullmatch("[0-9a-f]{64}", options.expected_sha256 or ""):
@@ -194,4 +198,4 @@ if __name__ == "__main__":
         IMAGE_HASH = options.expected_sha256
     if (RUN / "test-start.txt").exists():
         raise SystemExit("This physical trial already started")
-    main(options.check_super)
+    main(options.check_super, options.a05_ram)

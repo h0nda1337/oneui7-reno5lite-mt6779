@@ -84,6 +84,16 @@
       },
       "stock_recovery_write_acknowledged": true,
       "coloros_boot_completed": true
+    },
+    {
+      "trial": 10,
+      "image_sha256": "185ceb68e7f49a1a58dd0cac7a99b340dceaca40a3fae00ad9c7698defce3281",
+      "manifest": "recovery-a05-ram/manifest.json",
+      "observation": "La consola USB del kernel respondió. Los SHA-256 de linker64, init y toybox coincidieron con las imágenes del A05. El linker inició el listado de dependencias de init y abortó con getentropy y ENOENT (salida 134). Las 23 dependencias y la respuesta de toybox siguen pendientes en el Reno.",
+      "stock_recovery_write_acknowledged": true,
+      "coloros_boot_completed": true,
+      "first_return_ro_boot_bootreason": "reboot",
+      "after_restore_ro_boot_bootreason": "PMIC_cold_reboot"
     }
   ]
 }

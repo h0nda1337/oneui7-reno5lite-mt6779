@@ -9,6 +9,7 @@ case "$variant" in
     recovery) ramdisk=ramdisk-recovery.cpio.gz ;;
     recovery-ufs-module) ramdisk=ramdisk-recovery-ufs-module.cpio.gz ;;
     recovery-ufs-on-request) ramdisk=ramdisk-recovery-ufs-on-request.cpio.gz ;;
+    recovery-a05-ram) ramdisk=ramdisk-recovery-a05-ram.cpio.gz ;;
 esac
 ramdisk=${2:-$ramdisk}
 busybox=${BUSYBOX_ARM64:-ramdisk-tools/usr/bin/busybox}
@@ -31,8 +32,25 @@ file /bin/busybox $busybox 0755 0 0
 file /bin/report-ufs report-ufs.sh 0755 0 0
 file /init init-early.sh 0755 0 0
 EOF
-if [[ $variant == recovery || $variant == recovery-ufs-module || $variant == recovery-ufs-on-request ]]; then
+if [[ $variant == recovery || $variant == recovery-ufs-module || $variant == recovery-ufs-on-request || $variant == recovery-a05-ram ]]; then
     printf 'file /recovery-diagnostic /dev/null 0444 0 0\n' >>ramdisk.filelist
+fi
+if [[ $variant == recovery-a05-ram ]]; then
+    overlay=${3:-a05-userspace.cpio.gz}
+    # Accept the donor overlay produced by check_android_userspace_qemu.py.
+    # A QEMU-specific /init or any replacement of the diagnostic utilities would change the trial.
+    contents=$(gzip -dc -- "$overlay" | cpio --quiet -it)
+    for member in bin/check-a05-userspace system/bin/bootstrap/linker64 system/bin/init system/bin/toybox; do
+        grep -Fxq "$member" <<<"$contents" || { echo "Missing $member in donor overlay" >&2; exit 1; }
+    done
+    if grep -Evq '^(bin|bin/check-a05-userspace|system(/[^./][^/]*)*)$' <<<"$contents"; then
+        echo "Unexpected path in donor overlay" >&2
+        exit 1
+    fi
+    cat >>ramdisk.filelist <<'EOF'
+file /a05-ram-probe /dev/null 0444 0 0
+file /bin/run-a05-ram-probe run-a05-ram-probe.sh 0755 0 0
+EOF
 fi
 if [[ $variant == recovery-ufs-on-request ]]; then
     printf 'file /ufs-on-request /dev/null 0444 0 0\n' >>ramdisk.filelist
@@ -47,5 +65,8 @@ EOF
 fi
 
 ./gen_init_cpio -t 0 ramdisk.filelist | gzip -n >"$ramdisk.partial"
+if [[ $variant == recovery-a05-ram ]]; then
+    cat -- "$overlay" >>"$ramdisk.partial"
+fi
 gzip -t "$ramdisk.partial"
 mv -f -- "$ramdisk.partial" "$ramdisk"

@@ -56,6 +56,42 @@ def shell_challenge(expected_release=None):
     return token, command, response
 
 
+def check_a05_ram(stream, captured, logfile, expected_release, deadline):
+    token = secrets.token_hex(8).encode()
+    command = (
+        b"(set -e; test -f /a05-ram-probe && test -f /dev/a05-userspace.log; "
+        b"export ANDROID_ROOT=/system LD_LIBRARY_PATH=/system/lib64/bootstrap:/system/lib64; "
+        b"cat /dev/a05-userspace.log; grep -Fxq A05_CHECK_EXIT=0 /dev/a05-userspace.log; "
+        b"cat /dev/a05-pmic.log; "
+        b"sha256sum /system/bin/bootstrap/linker64 /system/bin/init /system/bin/toybox; "
+        b"! grep -q '^ufs_mediatek ' /proc/modules || exit 1; "
+        b"test ! -e /sys/class/block/sdc; "
+        b"r=$(/system/bin/bootstrap/linker64 /system/bin/toybox uname -r); "
+        b"/system/bin/bootstrap/linker64 /system/bin/toybox echo A05_NATIVE "
+        + token + b" \"$r\")\r"
+    )
+    proof = re.compile(rb"(?m)^A05_NATIVE " + token + b" " +
+                       re.escape(expected_release.encode("ascii")) + rb"\r*\n")
+    next_command = 0
+    print(f"Waiting for Samsung toybox response {token.decode()}", flush=True)
+    while time.monotonic() < deadline:
+        if time.monotonic() >= next_command:
+            stream.write(command)
+            next_command = time.monotonic() + 2
+        data = stream.read(4096)
+        if not data:
+            continue
+        captured.extend(data)
+        logfile.write(data)
+        logfile.flush()
+        if proof.search(captured):
+            print("Verified Samsung toybox challenge on the physical RAM diagnostic", flush=True)
+            stream.write(b": > /dev/a05-reboot-request && printf '\\nA05_RETURN %s\\n' " + token + b"\r")
+            print("Requested the controlled return to ColorOS", flush=True)
+            return True
+    return False
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
@@ -65,7 +101,11 @@ def main():
                         help="Keep polling the shell after its first response for the UFS partitions")
     parser.add_argument("--check-super", action="store_true",
                         help="Read the LP geometry and first header block of the identified super partition")
+    parser.add_argument("--a05-ram", action="store_true",
+                        help="Verify Samsung binaries from RAM while UFS stays inactive")
     args = parser.parse_args()
+    if args.a05_ram and (args.follow_ufs or args.check_super or not args.expected_release):
+        parser.error("--a05-ram requires an exact kernel release and a RAM-only session")
     if args.check_super:
         args.follow_ufs = True
     deadline = time.monotonic() + args.seconds
@@ -103,6 +143,10 @@ def main():
                         if not verified_connection and response.search(captured):
                             verified_connection = shell_observed = True
                             print("Confirmed the physical shell returned its kernel release", flush=True)
+                            if args.a05_ram:
+                                if check_a05_ram(stream, captured, logfile, args.expected_release, deadline):
+                                    return
+                                break
                             if args.follow_ufs:
                                 stream.write(REQUEST_UFS)
                             next_command = time.monotonic() + 1
@@ -120,6 +164,8 @@ def main():
             except serial.SerialException as error:
                 print(f"Diagnostic serial disconnected: {error}", flush=True)
     if shell_observed:
+        if args.a05_ram:
+            raise SystemExit("The Samsung userspace challenge did not complete")
         print("The shell responded, but a requested storage check remained incomplete")
         return
     raise SystemExit("No complete response from the diagnostic serial console")

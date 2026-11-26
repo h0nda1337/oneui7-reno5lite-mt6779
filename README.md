@@ -11,6 +11,7 @@ Port experimental del Galaxy A05 SM-A055M al OPPO Reno5 Lite CPH2205 (MT6779). E
 | USB en el Reno | La prueba 7 terminó con cero bytes recibidos en Windows. Las pruebas 8 y 9 usaron los mismos componentes de arranque y añadieron solo `cpuidle.off=1` a la línea de comandos de la prueba 7. En cada arranque la consola devolvió el reto de esa sesión y la versión exacta del kernel. El monitor pidió entonces que se cargara el módulo UFS. |
 | QEMU | En la prueba de referencia, la consola USB respondió antes y después de solicitar UFS. Al añadir `cpuidle.off=1`, el USB simulado respondió al primer reto y su controlador virtual falló después. Por UART se verificaron el latido a los 15 s y la carga de UFS a petición. |
 | Binarios del A05 en QEMU Cortex-A55 | El enlazador de Samsung resolvió las 23 dependencias directas de `/system/bin/init`. El `toybox` de esa misma imagen ejecutó `uname -r` y devolvió la versión del kernel experimental. |
+| Binarios del A05 en la RAM del Reno | En la prueba 10, la consola USB respondió y se comprobaron los hashes de `linker64`, `init` y `toybox`. Al intentar listar las bibliotecas de `init`, el enlazador abortó con `getentropy failed: No such file or directory` y código 134. |
 | Primera etapa de Android en QEMU | El `/init` original del A05 se ejecutó como PID 1, copió `build.prop` e inició la búsqueda de las particiones de primer montaje. En el control con la tabla de montaje de Samsung y sin discos, llegó al tiempo de espera de `super` y de otras 13 particiones. |
 | Android y almacenamiento en QEMU | Con las ocho particiones lógicas originales del A05, sus dos `vbmeta` y las particiones `prism` y `optics` del CSC, Android montó diez sistemas de archivos en modo de lectura mediante dm-verity. Cargó la política SELinux, pasó a la segunda etapa de `init` y activó los tres paquetes APEX iniciales. El control de tres particiones se detiene al buscar `prism`. |
 | One UI por DSU | Se empaquetaron `system`, `product` y `system_ext`. Con el kernel original del Reno se registró `bpfloader-failed`. La prueba de mapas BPF en QEMU cubre una parte del arranque de Android. |
@@ -71,7 +72,8 @@ Con la imagen `system` del A05 montada como se indica en la sección de DSU, est
 ```bash
 python3 check_android_userspace_qemu.py --system-root /tmp/codex-oneui-2205/a05/system \
     --kernel "$build/arch/arm64/boot/Image" --ramdisk ramdisk-recovery-ufs-on-request.cpio.gz \
-    --log qemu-android-userspace.log
+    --log qemu-android-userspace.log --overlay a05-userspace.cpio.gz
+bash build_early_ramdisk.sh recovery-a05-ram ramdisk-recovery-a05-ram.cpio.gz a05-userspace.cpio.gz
 ```
 
 Para comprobar el primer proceso de Android, el siguiente control extrae `init_boot` y la tabla de montaje de `vendor_boot` del AP original. Arranca en QEMU con el kernel del port y comprueba en la consola que el PID 1 llega a esperar las particiones. Requiere GNU `cpio`.
@@ -96,6 +98,7 @@ for p in prism optics; do
     tar -xOf "$A05_CSC" "$p.img.lz4" | lz4 -dc > "$CSC_RAW/$p.sparse"
     simg2img "$CSC_RAW/$p.sparse" "$CSC_RAW/$p.img"
 done
+python3 check_a05_csc_fec.py --vbmeta "$A05_BOOT_IMAGES/vbmeta.img" --csc-images "$CSC_RAW"
 python3 ../inspect_super.py ../a05-super.sparse.img --output ../a05 \
     --extract system_dlkm vendor_dlkm odm_dlkm
 python3 check_a05_virtio_mount_qemu.py --boot-images "$A05_BOOT_IMAGES" \
