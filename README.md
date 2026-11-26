@@ -14,7 +14,9 @@ Port experimental del Galaxy A05 SM-A055M al OPPO Reno5 Lite CPH2205 (MT6779). E
 | Primera etapa de Android en QEMU | El `/init` original del A05 se ejecutó como PID 1, copió `build.prop` e inició la búsqueda de las particiones de primer montaje. En el control con la tabla de montaje de Samsung y sin discos, llegó al tiempo de espera de `super` y de otras 13 particiones. |
 | One UI por DSU | Se empaquetaron `system`, `product` y `system_ext`. Con el kernel original del Reno se registró `bpfloader-failed`. La prueba de mapas BPF en QEMU cubre una parte del arranque de Android. |
 
-El alcance actual de las pruebas físicas es el recovery temporal. El objetivo posterior es evaluar qué componentes MediaTek del A05 pueden adaptarse. La etapa del preloader requiere antes un arranque reproducible y una vía de recuperación comprobada. [Registro de pruebas y restauraciones](work/kernel-port/physical-trials.json)
+Los dos arranques con consola y UFS terminaron en un reinicio automático. ColorOS registró `ocp` en ambos casos. La causa sigue abierta. Después de cada prueba Fastboot confirmó la escritura del recovery original y ColorOS F.72 completó el arranque. [Registro de pruebas y restauraciones](work/kernel-port/physical-trials.json)
+
+El alcance actual de las pruebas físicas es el recovery temporal. El objetivo posterior es evaluar qué componentes MediaTek del A05 pueden adaptarse. La etapa del preloader requiere antes un arranque reproducible y una vía de recuperación comprobada.
 
 ## Entradas locales
 
