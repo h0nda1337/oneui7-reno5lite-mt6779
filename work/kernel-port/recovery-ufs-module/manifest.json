@@ -1,0 +1,28 @@
+{
+  "recovery_file": "recovery.img",
+  "sha256": "3e72cc8d0f2107acb2f15834ec4131eebedba24930058ebd208246edb713bdf5",
+  "stock_recovery_sha256": "ac989e3009148792101a764a82fca8ca6212ec0afdd84e13d3b85e87364903b1",
+  "bytes": 67108864,
+  "kernel_sha256": "ad92d263cb12f938b874f7bad565e9a10a8196e227d493f280024b489ff8de01",
+  "base_dtb_sha256": "7403d7e2dfb0e0fa6861710821e5c7ec1cc310555bfce6cf19f5422f89105e61",
+  "ramdisk_sha256": "75284f6034d4238a4e103f14ac78717702955abf1088d58a1e0d2741a47a4a7a",
+  "diagnostic_boot_args": [
+    "rdinit=/init",
+    "cph2205.console=ttyS0",
+    "cph2205.usb=1",
+    "cph2205.recovery=1",
+    "cph2205.lkfb=1",
+    "console=tty0",
+    "clk_ignore_unused",
+    "pd_ignore_unused"
+  ],
+  "stock_avb_properties": {
+    "com.android.build.recovery.fingerprint": "alps/vnd_k79v1_64/k79v1_64:12/SP1A.210812.016/1776221604582:user/release-keys",
+    "com.android.build.system.os_version": "12",
+    "com.android.build.system.security_patch": "2026-01-01",
+    "com.android.build.vendor.security_patch": "2026-01-01",
+    "com.android.build.boot.security_patch": "2026-01-01"
+  },
+  "oem_signature": false,
+  "physical_boot_verified": false
+}

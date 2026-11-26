@@ -1,0 +1,12 @@
+{
+  "stock-kernel-control": {
+    "file": "CPH2205-stock-kernel-control-ram.img",
+    "size": 18421760,
+    "sha256": "dd7c651cf526bded149c957dd29de0a56c69281f6d4ae2e1c51188d35670cbfa"
+  },
+  "linux-6.6": {
+    "file": "CPH2205-linux-6.6-ram.img",
+    "size": 15255552,
+    "sha256": "05a4827cd7baf943115a5b7829399e55c06ac3c3ca793e2271db9923bab849cd"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "archive": "AP_A055MUBUGDZB2_A055MUBUGDZB2_MQB106667834_REV00_user_low_ship_MULTI_CERT_meta_OS15.tar.md5",
+  "boot_header": 4,
+  "linux_version": "6.6.89-android15-8-abA055MUBUGDZB2-4k (kleaf@build-host) (Android (11368308, +pgo, +bolt, +lto, +mlgo, based on r510928) clang version 18.0.0 (https://android.googlesource.com/toolchain/llvm-project 477610d4d0d988e69dbc3fae4fe86bff3f07f2b5), LLD 18.0.0) #1 SMP PREEMPT ",
+  "kernel_sha256": "5854ba3bb4e66850fc57c2845d050382e4549d5ead7c990069abbc467214054c",
+  "kernel_config_sha256": "ef3a0f449b3763088499f4204bfd051b064cc656785f136a6c80d23355bc5c13"
+}

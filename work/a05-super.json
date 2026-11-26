@@ -1,0 +1,117 @@
+{
+  "size": 9227468800,
+  "block_size": 4096,
+  "slot": 0,
+  "slots": 2,
+  "version": "10.0",
+  "groups": {
+    "default": 0,
+    "main": 9223274496
+  },
+  "partitions": {
+    "system": {
+      "size": 4570267648,
+      "attributes": 1,
+      "group": "main",
+      "extents": [
+        [
+          8926304,
+          0,
+          2048,
+          0
+        ]
+      ]
+    },
+    "odm": {
+      "size": 2121728,
+      "attributes": 1,
+      "group": "main",
+      "extents": [
+        [
+          4144,
+          0,
+          8929280,
+          0
+        ]
+      ]
+    },
+    "odm_dlkm": {
+      "size": 348160,
+      "attributes": 1,
+      "group": "main",
+      "extents": [
+        [
+          680,
+          0,
+          8935424,
+          0
+        ]
+      ]
+    },
+    "product": {
+      "size": 1969045504,
+      "attributes": 1,
+      "group": "main",
+      "extents": [
+        [
+          3845792,
+          0,
+          8937472,
+          0
+        ]
+      ]
+    },
+    "system_dlkm": {
+      "size": 10575872,
+      "attributes": 1,
+      "group": "main",
+      "extents": [
+        [
+          20656,
+          0,
+          12783616,
+          0
+        ]
+      ]
+    },
+    "system_ext": {
+      "size": 460034048,
+      "attributes": 1,
+      "group": "main",
+      "extents": [
+        [
+          898504,
+          0,
+          12806144,
+          0
+        ]
+      ]
+    },
+    "vendor": {
+      "size": 1012215808,
+      "attributes": 1,
+      "group": "main",
+      "extents": [
+        [
+          1976984,
+          0,
+          13705216,
+          0
+        ]
+      ]
+    },
+    "vendor_dlkm": {
+      "size": 34611200,
+      "attributes": 1,
+      "group": "main",
+      "extents": [
+        [
+          67600,
+          0,
+          15683584,
+          0
+        ]
+      ]
+    }
+  }
+}

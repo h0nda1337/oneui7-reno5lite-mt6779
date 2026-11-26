@@ -1,0 +1,26 @@
+diff --git a/drivers/pinctrl/mediatek/pinctrl-mt6779.c b/drivers/pinctrl/mediatek/pinctrl-mt6779.c
+--- a/drivers/pinctrl/mediatek/pinctrl-mt6779.c
++++ b/drivers/pinctrl/mediatek/pinctrl-mt6779.c
+@@ -734,7 +734,7 @@
+ 
+ static const struct mtk_eint_hw mt6779_eint_hw = {
+ 	.port_mask = 7,
+-	.ports     = 6,
++	.ports     = 7,
+ 	.ap_num    = 195,
+ 	.db_cnt    = 13,
+ 	.db_time   = debounce_time_mt2701,
+diff --git a/drivers/pinctrl/mediatek/mtk-eint.c b/drivers/pinctrl/mediatek/mtk-eint.c
+--- a/drivers/pinctrl/mediatek/mtk-eint.c
++++ b/drivers/pinctrl/mediatek/mtk-eint.c
+@@ -350,6 +350,10 @@
+ 			mask_offset = eint_num >> 5;
+ 			index = eint_num + offset;
+ 			status &= ~BIT(offset);
++
++			/* The last bank may contain fewer than 32 valid lines. */
++			if (index >= eint->hw->ap_num)
++				continue;
+ 
+ 			/*
+ 			 * If we get an interrupt on pin that was only required

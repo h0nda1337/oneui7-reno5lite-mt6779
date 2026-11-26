@@ -1,0 +1,171 @@
+{
+  "base": [
+    {
+      "index": 0,
+      "id": 0,
+      "revision": 0,
+      "custom": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "offset": 64,
+      "file": "base-0.dtb",
+      "size": 148931,
+      "sha256": "b04abf103f62262c5c15dab06be54cfa8cca3f086bb4b97c4eaaf351cb3c0273"
+    }
+  ],
+  "overlays": [
+    {
+      "index": 0,
+      "id": 0,
+      "revision": 0,
+      "custom": [
+        19537,
+        65535,
+        0,
+        0
+      ],
+      "offset": 352,
+      "file": "overlay-0.dtb",
+      "size": 95726,
+      "sha256": "ba5a13a1aaee4178ca60bd60d6d3f5d958244848a6d1ace843cda2ed1670a2b5"
+    },
+    {
+      "index": 1,
+      "id": 1,
+      "revision": 0,
+      "custom": [
+        19538,
+        65535,
+        0,
+        0
+      ],
+      "offset": 96078,
+      "file": "overlay-1.dtb",
+      "size": 101979,
+      "sha256": "9fbfa7b69fe618818ed10fc8352b7ed752196ea52ebdac5a57f0376345747c17"
+    },
+    {
+      "index": 2,
+      "id": 2,
+      "revision": 0,
+      "custom": [
+        19551,
+        65535,
+        0,
+        0
+      ],
+      "offset": 198057,
+      "file": "overlay-2.dtb",
+      "size": 91671,
+      "sha256": "796a9a0989b4f305ae341cbfc3c136f28408007bf8e3b4dbcfab865a6b189b1c"
+    },
+    {
+      "index": 3,
+      "id": 3,
+      "revision": 0,
+      "custom": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "offset": 289728,
+      "file": "overlay-3.dtb",
+      "size": 26050,
+      "sha256": "b1292f82ee9f4f483db55ecd08242854375a457ecb8b51b0251d3c6333b225ec"
+    },
+    {
+      "index": 4,
+      "id": 4,
+      "revision": 0,
+      "custom": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "offset": 315778,
+      "file": "overlay-4.dtb",
+      "size": 26050,
+      "sha256": "b1292f82ee9f4f483db55ecd08242854375a457ecb8b51b0251d3c6333b225ec"
+    },
+    {
+      "index": 5,
+      "id": 5,
+      "revision": 0,
+      "custom": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "offset": 341828,
+      "file": "overlay-5.dtb",
+      "size": 26050,
+      "sha256": "b1292f82ee9f4f483db55ecd08242854375a457ecb8b51b0251d3c6333b225ec"
+    },
+    {
+      "index": 6,
+      "id": 6,
+      "revision": 0,
+      "custom": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "offset": 367878,
+      "file": "overlay-6.dtb",
+      "size": 26050,
+      "sha256": "b1292f82ee9f4f483db55ecd08242854375a457ecb8b51b0251d3c6333b225ec"
+    },
+    {
+      "index": 7,
+      "id": 7,
+      "revision": 0,
+      "custom": [
+        19358,
+        65535,
+        0,
+        0
+      ],
+      "offset": 393928,
+      "file": "overlay-7.dtb",
+      "size": 88985,
+      "sha256": "4c3ab57239d194c9e67edd834fa800f1615b3b42ceee074815e3a1edf545c1ed"
+    },
+    {
+      "index": 8,
+      "id": 8,
+      "revision": 0,
+      "custom": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "offset": 482913,
+      "file": "overlay-8.dtb",
+      "size": 26050,
+      "sha256": "b1292f82ee9f4f483db55ecd08242854375a457ecb8b51b0251d3c6333b225ec"
+    },
+    {
+      "index": 9,
+      "id": 9,
+      "revision": 0,
+      "custom": [
+        20291,
+        65535,
+        0,
+        0
+      ],
+      "offset": 508963,
+      "file": "overlay-9.dtb",
+      "size": 100225,
+      "sha256": "c01d89017669523b782650059072fa9a643f80f2cd70ba217d1ecb59906ea126"
+    }
+  ]
+}

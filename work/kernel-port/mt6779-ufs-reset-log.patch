@@ -1,0 +1,31 @@
+diff --git a/drivers/ufs/host/ufs-mediatek.c b/drivers/ufs/host/ufs-mediatek.c
+--- a/drivers/ufs/host/ufs-mediatek.c
++++ b/drivers/ufs/host/ufs-mediatek.c
+@@ -1200,11 +1200,18 @@ static int ufs_mtk_link_startup_notify(struct ufs_hba *hba,
+ 
+ static int ufs_mtk_device_reset(struct ufs_hba *hba)
+ {
++	struct ufs_mtk_host *host = ufshcd_get_variant(hba);
+ 	struct arm_smccc_res res;
+ 
+ 	/* disable hba before device reset */
++	if (host->ref_clk_legacy_half_hw)
++		dev_info(hba->dev, "stopping host before UFS device reset\n");
+ 	ufshcd_hba_stop(hba);
+ 
++	if (host->ref_clk_legacy_half_hw)
++		dev_info(hba->dev, "asserting UFS device reset via firmware\n");
+ 	ufs_mtk_device_reset_ctrl(0, res);
++	if (host->ref_clk_legacy_half_hw)
++		dev_info(hba->dev, "UFS reset assertion returned %ld\n", (long)res.a0);
+ 
+ 	/*
+@@ -1218,6 +1225,8 @@ static int ufs_mtk_device_reset(struct ufs_hba *hba)
+ 	usleep_range(10, 15);
+ 
+ 	ufs_mtk_device_reset_ctrl(1, res);
++	if (host->ref_clk_legacy_half_hw)
++		dev_info(hba->dev, "UFS reset release returned %ld\n", (long)res.a0);
+ 
+ 	/* Some devices may need time to respond to rst_n */
+ 	usleep_range(10000, 15000);

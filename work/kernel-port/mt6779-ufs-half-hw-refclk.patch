@@ -1,0 +1,62 @@
+diff --git a/drivers/ufs/host/ufs-mediatek.h b/drivers/ufs/host/ufs-mediatek.h
+--- a/drivers/ufs/host/ufs-mediatek.h
++++ b/drivers/ufs/host/ufs-mediatek.h
+@@ -60,6 +60,7 @@
+ 
+ #define REFCLK_REQ_TIMEOUT_US       3000
+ #define REFCLK_DEFAULT_WAIT_US      32
++#define REFCLK_LEGACY_HALF_HW        1
+ 
+ /*
+  * Other attributes
+@@ -181,6 +182,7 @@ struct ufs_mtk_host {
+ 	bool pm_qos_init;
+ 	bool unipro_lpm;
+ 	bool ref_clk_enabled;
++	bool ref_clk_legacy_half_hw;
+ 	u16 ref_clk_ungating_wait_us;
+ 	u16 ref_clk_gating_wait_us;
+ 	u32 ip_ver;
+diff --git a/drivers/ufs/host/ufs-mediatek.c b/drivers/ufs/host/ufs-mediatek.c
+--- a/drivers/ufs/host/ufs-mediatek.c
++++ b/drivers/ufs/host/ufs-mediatek.c
+@@ -289,6 +289,24 @@ static int ufs_mtk_setup_ref_clk(struct ufs_hba *hba, bool on)
+ 	if (host->ref_clk_enabled == on)
+ 		return 0;
+ 
++	if (host->ref_clk_legacy_half_hw) {
++		/*
++		 * Legacy firmware takes a single clock notification with x3=0.
++		 * SPM handles the clock and the host only releases its request.
++		 */
++		if (on) {
++			ufs_mtk_ref_clk_notify(true, 0, res);
++			ufshcd_delay_us(host->ref_clk_ungating_wait_us, 10);
++		}
++		ufshcd_writel(hba, REFCLK_RELEASE, REG_UFS_REFCLK_CTRL);
++		host->ref_clk_enabled = on;
++		if (!on) {
++			ufshcd_delay_us(host->ref_clk_gating_wait_us, 10);
++			ufs_mtk_ref_clk_notify(false, 0, res);
++		}
++		return 0;
++	}
++
+ 	ufs_mtk_ref_clk_notify(on, PRE_CHANGE, res);
+ 
+ 	if (on) {
+@@ -607,6 +625,14 @@ static void ufs_mtk_init_host_caps(struct ufs_hba *hba)
+ {
+ 	struct ufs_mtk_host *host = ufshcd_get_variant(hba);
+ 	struct device_node *np = hba->dev->of_node;
++	u32 refclk_ctrl;
++
++	if (of_device_is_compatible(np, "mediatek,mt8183-ufshci") &&
++	    !of_property_read_u32(np, "mediatek,refclk_ctrl", &refclk_ctrl) &&
++	    refclk_ctrl == REFCLK_LEGACY_HALF_HW) {
++		host->ref_clk_legacy_half_hw = true;
++		dev_info(hba->dev, "using legacy half-hardware reference clock mode\n");
++	}
+ 
+ 	if (of_property_read_bool(np, "mediatek,ufs-boost-crypt"))
+ 		ufs_mtk_init_boost_crypt(hba);

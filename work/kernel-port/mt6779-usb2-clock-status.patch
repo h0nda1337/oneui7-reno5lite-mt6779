@@ -1,0 +1,49 @@
+diff --git a/drivers/usb/mtu3/mtu3_plat.c b/drivers/usb/mtu3/mtu3_plat.c
+--- a/drivers/usb/mtu3/mtu3_plat.c
++++ b/drivers/usb/mtu3/mtu3_plat.c
+@@ -9,6 +9,7 @@
+ #include <linux/iopoll.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/of_address.h>
+ #include <linux/of_irq.h>
+ #include <linux/platform_device.h>
+@@ -26,20 +27,28 @@ int ssusb_check_clocks(struct ssusb_mtk *ssusb, u32 ex_clks)
+ 	u32 value, check_val;
+ 	int ret;
+ 
+-	check_val = ex_clks | SSUSB_SYS125_RST_B_STS | SSUSB_SYSPLL_STABLE |
+-			SSUSB_REF_RST_B_STS;
+-
+-	ret = readl_poll_timeout(ibase + U3D_SSUSB_IP_PW_STS1, value,
+-			(check_val == (value & check_val)), 100, 20000);
+-	if (ret) {
+-		dev_err(ssusb->dev, "clks of sts1 are not stable!\n");
+-		return ret;
++	/* ColorOS uses the USB2 MAC status for MT6779 high-speed gadgets. */
++	if (ssusb->dr_mode == USB_DR_MODE_PERIPHERAL && ssusb->u3d &&
++	    ssusb->u3d->max_speed <= USB_SPEED_HIGH &&
++	    of_machine_is_compatible("mediatek,MT6779")) {
++		dev_info(ssusb->dev, "using MT6779 USB2 clock status\n");
++	} else {
++		check_val = ex_clks | SSUSB_SYS125_RST_B_STS | SSUSB_SYSPLL_STABLE |
++			    SSUSB_REF_RST_B_STS;
++
++		ret = readl_poll_timeout(ibase + U3D_SSUSB_IP_PW_STS1, value,
++					 (value & check_val) == check_val, 100, 20000);
++		if (ret) {
++			dev_err(ssusb->dev, "USB clocks unstable: sts1=0x%x, mask=0x%x\n",
++				value, check_val);
++			return ret;
++		}
+ 	}
+ 
+ 	ret = readl_poll_timeout(ibase + U3D_SSUSB_IP_PW_STS2, value,
+ 			(value & SSUSB_U2_MAC_SYS_RST_B_STS), 100, 10000);
+ 	if (ret) {
+-		dev_err(ssusb->dev, "mac2 clock is not stable\n");
++		dev_err(ssusb->dev, "USB2 MAC clock unstable: sts2=0x%x\n", value);
+ 		return ret;
+ 	}
+ 

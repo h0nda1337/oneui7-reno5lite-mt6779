@@ -1,0 +1,35 @@
+diff --git a/drivers/clk/mediatek/clk-mtk.h b/drivers/clk/mediatek/clk-mtk.h
+--- a/drivers/clk/mediatek/clk-mtk.h
++++ b/drivers/clk/mediatek/clk-mtk.h
+@@ -238,6 +238,9 @@ struct mtk_clk_desc {
+ 	unsigned int mfg_clk_idx;
+ 
+ 	bool need_runtime_pm;
++
++	/* Minimum onecell capacity for a sparse clock ID space. */
++	unsigned int num_clk_ids;
+ };
+ 
+ int mtk_clk_pdev_probe(struct platform_device *pdev);
+diff --git a/drivers/clk/mediatek/clk-mtk.c b/drivers/clk/mediatek/clk-mtk.c
+--- a/drivers/clk/mediatek/clk-mtk.c
++++ b/drivers/clk/mediatek/clk-mtk.c
+@@ -511,6 +511,7 @@ static int __mtk_clk_simple_probe(struct platform_device *pdev,
+ 	num_clks = mcd->num_clks + mcd->num_composite_clks;
+ 	num_clks += mcd->num_fixed_clks + mcd->num_factor_clks;
+ 	num_clks += mcd->num_mux_clks + mcd->num_divider_clks;
++	num_clks = max_t(unsigned int, num_clks, mcd->num_clk_ids);
+ 
+ 	clk_data = mtk_alloc_clk_data(num_clks);
+ 	if (!clk_data) {
+diff --git a/drivers/clk/mediatek/clk-mt6779.c b/drivers/clk/mediatek/clk-mt6779.c
+--- a/drivers/clk/mediatek/clk-mt6779.c
++++ b/drivers/clk/mediatek/clk-mt6779.c
+@@ -1295,6 +1295,7 @@ static int clk_mt6779_probe(struct platform_device *pdev)
+ static const struct mtk_clk_desc infra_desc = {
+ 	.clks = infra_clks,
+ 	.num_clks = ARRAY_SIZE(infra_clks),
++	.num_clk_ids = CLK_INFRA_NR_CLK,
+ };
+ 
+ static const struct of_device_id of_match_clk_mt6779_infra[] = {

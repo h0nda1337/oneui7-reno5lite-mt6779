@@ -1,0 +1,15 @@
+{
+  "recovery_file": "recovery.img",
+  "sha256": "f5ae0ce98e00d54532f23852da60a5abb073bad333e39da9457fa61ae649d10b",
+  "stock_recovery_sha256": "ac989e3009148792101a764a82fca8ca6212ec0afdd84e13d3b85e87364903b1",
+  "bytes": 67108864,
+  "stock_avb_properties": {
+    "com.android.build.recovery.fingerprint": "alps/vnd_k79v1_64/k79v1_64:12/SP1A.210812.016/1776221604582:user/release-keys",
+    "com.android.build.system.os_version": "12",
+    "com.android.build.system.security_patch": "2026-01-01",
+    "com.android.build.vendor.security_patch": "2026-01-01",
+    "com.android.build.boot.security_patch": "2026-01-01"
+  },
+  "oem_signature": false,
+  "physical_boot_verified": false
+}

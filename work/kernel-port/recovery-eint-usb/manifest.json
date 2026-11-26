@@ -1,0 +1,18 @@
+{
+  "recovery_file": "recovery.img",
+  "sha256": "c7162f4464994f25d257ba881d5d84a629da3fc7e603fc912aec69edd5f65bb5",
+  "stock_recovery_sha256": "ac989e3009148792101a764a82fca8ca6212ec0afdd84e13d3b85e87364903b1",
+  "bytes": 67108864,
+  "kernel_sha256": "f6b903e6f891d98fc0b238675079a00a4907b4a31c7da42581283b6fdc0c226e",
+  "base_dtb_sha256": "7403d7e2dfb0e0fa6861710821e5c7ec1cc310555bfce6cf19f5422f89105e61",
+  "ramdisk_sha256": "bb96897429064016565b0d6daadf93e7d09449e18019da61e72a756a2c1019a1",
+  "stock_avb_properties": {
+    "com.android.build.recovery.fingerprint": "alps/vnd_k79v1_64/k79v1_64:12/SP1A.210812.016/1776221604582:user/release-keys",
+    "com.android.build.system.os_version": "12",
+    "com.android.build.system.security_patch": "2026-01-01",
+    "com.android.build.vendor.security_patch": "2026-01-01",
+    "com.android.build.boot.security_patch": "2026-01-01"
+  },
+  "oem_signature": false,
+  "physical_boot_verified": false
+}

@@ -1,0 +1,224 @@
+{
+  "/soc/pwrap@1000d000": {
+    "compatible": [
+      "mediatek,mt6779-pwrap",
+      "mediatek,pwrap_mpu",
+      "syscon"
+    ],
+    "interrupts": {
+      "provider": "/soc/intpol-controller@0c53a650",
+      "specifiers": [
+        [
+          0,
+          212,
+          4
+        ]
+      ]
+    },
+    "clocks": {
+      "spi": {
+        "provider": "/oscillator@0",
+        "arguments": []
+      },
+      "wrap": {
+        "provider": "/soc/clock-reset-controller@10001000",
+        "arguments": [
+          2
+        ]
+      },
+      "ulposc": {
+        "provider": "/soc/clock-controller@10000000",
+        "arguments": [
+          14
+        ]
+      }
+    }
+  },
+  "/soc/pwrap@1000d000/main_pmic": {
+    "compatible": [
+      "mediatek,mt6359"
+    ],
+    "interrupts": {
+      "provider": "/soc/pinctrl@10005000",
+      "specifiers": [
+        [
+          193,
+          4
+        ],
+        [
+          208,
+          0
+        ]
+      ]
+    }
+  },
+  "/soc/serial@11002000": {
+    "compatible": [
+      "mediatek,mt6779-uart",
+      "mediatek,mt6577-uart"
+    ],
+    "interrupts": {
+      "provider": "/soc/intpol-controller@0c53a650",
+      "specifiers": [
+        [
+          0,
+          115,
+          8
+        ]
+      ]
+    },
+    "clocks": {
+      "baud": {
+        "provider": "/dummy26m",
+        "arguments": []
+      },
+      "bus": {
+        "provider": "/soc/clock-reset-controller@10001000",
+        "arguments": [
+          21
+        ]
+      }
+    }
+  },
+  "/soc/ufshci@11270000": {
+    "compatible": [
+      "mediatek,mt8183-ufshci"
+    ],
+    "interrupts": {
+      "provider": "/soc/intpol-controller@0c53a650",
+      "specifiers": [
+        [
+          0,
+          104,
+          8
+        ]
+      ]
+    },
+    "clocks": {
+      "ufs": {
+        "provider": "/soc/clock-reset-controller@10001000",
+        "arguments": [
+          79
+        ]
+      },
+      "ufs_tick": {
+        "provider": "/soc/clock-reset-controller@10001000",
+        "arguments": [
+          81
+        ]
+      },
+      "ufs_axi": {
+        "provider": "/soc/clock-reset-controller@10001000",
+        "arguments": [
+          87
+        ]
+      },
+      "unipro_tick": {
+        "provider": "/soc/clock-reset-controller@10001000",
+        "arguments": [
+          63
+        ]
+      },
+      "unipro_mbist": {
+        "provider": "/soc/clock-reset-controller@10001000",
+        "arguments": [
+          67
+        ]
+      },
+      "aes_top": {
+        "provider": "/soc/clock-controller@10000000",
+        "arguments": [
+          33
+        ]
+      },
+      "aes_infra": {
+        "provider": "/soc/clock-reset-controller@10001000",
+        "arguments": [
+          80
+        ]
+      },
+      "aes_bclk": {
+        "provider": "/soc/clock-reset-controller@10001000",
+        "arguments": [
+          98
+        ]
+      }
+    },
+    "phys": [
+      {
+        "provider": "/soc/phy@11fa0000",
+        "arguments": []
+      }
+    ],
+    "supplies": {
+      "vcc": "/soc/pwrap@1000d000/main_pmic/mt6359regulator/ldo_vemc",
+      "vccq2": "/soc/pwrap@1000d000/main_pmic/mt6359regulator/ldo_vufs"
+    },
+    "resets": {
+      "hci_rst": {
+        "provider": "/soc/clock-reset-controller@10001000/reset-controller",
+        "arguments": [
+          0
+        ]
+      },
+      "unipro_rst": {
+        "provider": "/soc/clock-reset-controller@10001000/reset-controller",
+        "arguments": [
+          1
+        ]
+      },
+      "crypto_rst": {
+        "provider": "/soc/clock-reset-controller@10001000/reset-controller",
+        "arguments": [
+          2
+        ]
+      }
+    }
+  },
+  "/soc/usb0@11201000": {
+    "compatible": [
+      "mediatek,mtu3"
+    ],
+    "interrupts": {
+      "provider": "/soc/intpol-controller@0c53a650",
+      "specifiers": [
+        [
+          0,
+          96,
+          8
+        ]
+      ]
+    },
+    "clocks": {
+      "sys_ck": {
+        "provider": "/soc/clock-reset-controller@10001000",
+        "arguments": [
+          91
+        ]
+      },
+      "ref_ck": {
+        "provider": "/soc/clock-reset-controller@10001000",
+        "arguments": [
+          105
+        ]
+      }
+    },
+    "phys": [
+      {
+        "provider": "/soc/usb-phy0@11e40000/usb2-phy0@11e40000",
+        "arguments": [
+          3
+        ]
+      },
+      {
+        "provider": "/soc/usb-phy0@11e40000/usb3-phy0@11e40700",
+        "arguments": [
+          4
+        ]
+      }
+    ],
+    "supplies": {
+      "vusb33": "/soc/pwrap@1000d000/main_pmic/mt6359regulator/ldo_vusb"
+    }
+  }
+}

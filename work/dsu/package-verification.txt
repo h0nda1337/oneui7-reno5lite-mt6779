@@ -1,0 +1,7 @@
+Packed system.img (4,570,267,648 bytes)
+Packed product.img (1,969,045,504 bytes)
+Packed system_ext.img (456,331,264 bytes)
+Verified system.img SHA-256 1b76bca4581eee78a3703f0ccc142507d3351a3e70e7d1f2f7441dd5c514777c
+Verified product.img SHA-256 66cc159cea4be2a8cfa5bc068adaaf73932cf27f388121be8548ded68d17dd2a
+Verified system_ext.img SHA-256 25fd3ad446b1ee5ef744f35d7f7e2828b10442ba702ef14b9ac94e8798e67984
+OneUI7-A055M-CPH2205-DSU-exp01.zip (3,583,730,077 bytes) SHA-256 43b72fcb1ce508c20357cf76fe85dcd5dddfbb422b9a674754c137a24699af97

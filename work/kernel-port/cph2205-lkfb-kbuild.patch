@@ -1,0 +1,13 @@
+diff --git a/drivers/video/fbdev/Makefile b/drivers/video/fbdev/Makefile
+--- a/drivers/video/fbdev/Makefile
++++ b/drivers/video/fbdev/Makefile
+@@ -125,6 +125,9 @@
+ obj-$(CONFIG_FB_DA8XX)		  += da8xx-fb.o
+ obj-$(CONFIG_FB_SSD1307)	  += ssd1307fb.o
+ obj-$(CONFIG_FB_SIMPLE)           += simplefb.o
++ifeq ($(CONFIG_FB_SIMPLE),y)
++obj-y                            += cph2205-lkfb.o
++endif
+ 
+ # the test framebuffer is last
+ obj-$(CONFIG_FB_VIRTUAL)          += vfb.o

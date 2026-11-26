@@ -1,0 +1,72 @@
+[
+  {
+    "component": "scp",
+    "a05": {
+      "size": 792976,
+      "sha256": "539ed4b2efec5e6ef0ab2ba31ed11912c88624750c9e54e25e76e3d5dd72846a",
+      "header_hex": "881688583804000074696e797379732d"
+    },
+    "reno": {
+      "size": 628176,
+      "sha256": "62acc36a773202381b863dd087f3df2c02ef060329a1771f8acf638442208e5d",
+      "header_hex": "881688583804000074696e797379732d"
+    },
+    "byte_identical": false
+  },
+  {
+    "component": "sspm",
+    "a05": {
+      "size": 503648,
+      "sha256": "871b88b32f47dedbbc2b90fca37c1f2bbb0e6c355d8b37b0e44190b90664e437",
+      "header_hex": "88168858bf9c070074696e797379732d"
+    },
+    "reno": {
+      "size": 656336,
+      "sha256": "8c36fa48a047e286b6bba9804b7bbbe0cb35f6b453092021078e3e6002658463",
+      "header_hex": "8816885860f3090074696e797379732d"
+    },
+    "byte_identical": false
+  },
+  {
+    "component": "spmfw",
+    "a05": {
+      "size": 49856,
+      "sha256": "b623ad458de1516aac937f23f1cd1344d6176bd8494f135f7e22ff0f1bf044bf",
+      "header_hex": "8816885817b0000073706d6677000000"
+    },
+    "reno": {
+      "size": 16400,
+      "sha256": "9a770cfae23fc85421e7cbc02827cf8375f0b25c59701c6f77d9c6ce22edcdf3",
+      "header_hex": "881688589f2f000073706d6677000000"
+    },
+    "byte_identical": false
+  },
+  {
+    "component": "gz",
+    "a05": {
+      "size": 3551040,
+      "sha256": "1522462e8ba9d2b463bad3e579521619bbb8c40198c1e549d2990637baef432c",
+      "header_hex": "8816885800b83400677a000000000000"
+    },
+    "reno": {
+      "size": 1267120,
+      "sha256": "8d9fd8c81138138a3499729c00a064c4b278fc342c96354bee35778d71b2bcac",
+      "header_hex": "88168858f0051100677a000000000000"
+    },
+    "byte_identical": false
+  },
+  {
+    "component": "tee",
+    "a05": {
+      "size": 2097152,
+      "sha256": "72327df547938d7054cc5233dc3ea20ea6dadf24434e9cc3c0a84578c097dbde",
+      "header_hex": "88168858008a02006174660000000000"
+    },
+    "reno": {
+      "size": 947024,
+      "sha256": "ce66f279a5c2b42b5dbec9cb9d6a856a9a6e3c31bae35bee339e6a8eae2ddfb9",
+      "header_hex": "88168858003c01006174660000000000"
+    },
+    "byte_identical": false
+  }
+]
