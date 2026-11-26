@@ -12,7 +12,7 @@ Port experimental del Galaxy A05 SM-A055M al OPPO Reno5 Lite CPH2205 (MT6779). E
 | QEMU | En la prueba de referencia, la consola USB respondió antes y después de solicitar UFS. Al añadir `cpuidle.off=1`, el USB simulado respondió al primer reto y su controlador virtual falló después. Por UART se verificaron el latido a los 15 s y la carga de UFS a petición. |
 | Binarios del A05 en QEMU Cortex-A55 | El enlazador de Samsung resolvió las 23 dependencias directas de `/system/bin/init`. El `toybox` de esa misma imagen ejecutó `uname -r` y devolvió la versión del kernel experimental. |
 | Primera etapa de Android en QEMU | El `/init` original del A05 se ejecutó como PID 1, copió `build.prop` e inició la búsqueda de las particiones de primer montaje. En el control con la tabla de montaje de Samsung y sin discos, llegó al tiempo de espera de `super` y de otras 13 particiones. |
-| Primer montaje con almacenamiento virtual | En QEMU, el `/init` del A05 detectó un disco virtio de solo lectura con `system`, `vbmeta` y `vbmeta_system`. Con una tabla de montaje específica para la máquina virtual, Android encontró ambos `vbmeta` originales. La verificación de arranque (AVB) solicitó también `prism`, ausente en ese disco, y detuvo el montaje de `/system`. |
+| Android y almacenamiento en QEMU | Con las ocho particiones lógicas originales del A05, sus dos `vbmeta` y las particiones `prism` y `optics` del CSC, Android montó diez sistemas de archivos en modo de lectura mediante dm-verity. Cargó la política SELinux, pasó a la segunda etapa de `init` y activó los tres paquetes APEX iniciales. El control de tres particiones se detiene al buscar `prism`. |
 | One UI por DSU | Se empaquetaron `system`, `product` y `system_ext`. Con el kernel original del Reno se registró `bpfloader-failed`. La prueba de mapas BPF en QEMU cubre una parte del arranque de Android. |
 
 Los dos arranques con consola y UFS terminaron en un reinicio automático. ColorOS registró `ocp` en ambos casos. La causa sigue abierta. Después de cada prueba Fastboot confirmó la escritura del recovery original y ColorOS F.72 completó el arranque. [Registro de pruebas y restauraciones](work/kernel-port/physical-trials.json)
@@ -87,6 +87,24 @@ python3 check_a05_virtio_mount_qemu.py --boot-images "$A05_BOOT_IMAGES" \
     --system ../a05/system.img --virtio-modules "$VIRTIO_MODULES" \
     --kernel "$build/arch/arm64/boot/Image" --log qemu-android-mount.log
 ```
+
+Para llegar a la segunda etapa, usa el CSC de la misma compilación que el AP. Desde `work/kernel-port`, define `A05_CSC` como la ruta al archivo CSC `.tar.md5` y `CSC_RAW` como un directorio local nuevo. Estos pasos usan `simg2img` de Android y las imágenes de `super` extraídas en la sección de DSU.
+
+```bash
+mkdir "$CSC_RAW"
+for p in prism optics; do
+    tar -xOf "$A05_CSC" "$p.img.lz4" | lz4 -dc > "$CSC_RAW/$p.sparse"
+    simg2img "$CSC_RAW/$p.sparse" "$CSC_RAW/$p.img"
+done
+python3 ../inspect_super.py ../a05-super.sparse.img --output ../a05 \
+    --extract system_dlkm vendor_dlkm odm_dlkm
+python3 check_a05_virtio_mount_qemu.py --boot-images "$A05_BOOT_IMAGES" \
+    --system ../a05/system.img --virtio-modules "$VIRTIO_MODULES" \
+    --csc-images "$CSC_RAW" --android-partitions ../a05 \
+    --kernel "$build/arch/arm64/boot/Image" --log qemu-android-second-stage.log
+```
+
+El verificador calcula la medida AVB a partir de los metadatos originales de la cadena que presenta al invitado. Para A055MUBUGDZB2, la cadena de `vbmeta`, `prism` y `optics` mide 12 672 bytes y su SHA-256 es `274d234631f32e8f926bee199d3c9ce3e2d7f94e1f20032b507c831cfb114387`. Las ocho imágenes lógicas se verificaron además contra el `vbmeta_system` firmado. En el CSC de esta compilación, el primer bloque de cada imagen requiere la corrección de errores FEC de dm-verity. En QEMU las lecturas corregidas coincidieron con los hashes del árbol firmado.
 
 ## Reconstruir el experimento DSU
 
